@@ -36,12 +36,21 @@ body {
     cursor: pointer;
     padding: 0.5rem;
     border-radius: 4px;
-    transition: background-color 0.2s;
+    transition: all 0.2s;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .version-info:hover {
     background-color: rgba(255, 255, 255, 0.1);
     color: white;
+    transform: scale(1.05);
+}
+
+.version-info:active {
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: scale(0.95);
 }
 
 .header h1 {

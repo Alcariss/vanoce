@@ -68,6 +68,28 @@ function filterByKdo(kdoValue) {
 
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, initializing app');
+    
+    // Ensure version click handler is attached
+    const versionElement = document.getElementById('version-info');
+    if (versionElement) {
+        console.log('Version element found, ensuring click handler');
+        versionElement.addEventListener('click', forceUpdate);
+        versionElement.style.cursor = 'pointer';
+        
+        // Add visual feedback for iOS
+        versionElement.addEventListener('touchstart', () => {
+            versionElement.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
+        });
+        versionElement.addEventListener('touchend', () => {
+            setTimeout(() => {
+                versionElement.style.backgroundColor = '';
+            }, 150);
+        });
+    } else {
+        console.warn('Version element not found!');
+    }
+    
     loadGifts();
 });
 
@@ -559,100 +581,101 @@ function getVersionInfo() {
     }
 }
 
-// Force PWA update - Enhanced hanushlasky-style mechanism
+// Force PWA update - Exact hanushlasky mechanism with iOS native prompts
 function forceUpdate() {
     console.log('Force update triggered');
-    showSuccessMessage('Kontroluji aktualizace...');
     
-    if (swRegistration) {
-        // Enhanced update check with multiple strategies
-        swRegistration.update().then(() => {
-            console.log('Update check completed');
+    // Check if running as standalone PWA
+    const isStandalonePWA = isStandalone();
+    console.log('Running as standalone PWA:', isStandalonePWA);
+    
+    if (isStandalonePWA && swRegistration) {
+        // iOS PWA-specific update with native prompt
+        if (confirm('Zkontrolovat aktualizace aplikace?')) {
+            showSuccessMessage('Kontroluji aktualizace...');
             
-            if (swRegistration.waiting) {
-                // Strategy 1: New service worker is waiting, activate it immediately
-                console.log('New SW waiting, activating...');
-                showSuccessMessage('Nová verze nalezena! Aktivuji...');
-                swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
+            swRegistration.update().then(() => {
+                console.log('Update check completed');
                 
-                // Wait for controllerchange event
-                const controllerChangeHandler = () => {
-                    console.log('Controller changed, reloading...');
-                    navigator.serviceWorker.removeEventListener('controllerchange', controllerChangeHandler);
-                    window.location.reload();
-                };
-                navigator.serviceWorker.addEventListener('controllerchange', controllerChangeHandler);
-                
-            } else if (swRegistration.installing) {
-                // Strategy 2: Service worker is installing, wait for it
-                console.log('SW installing, waiting...');
-                showSuccessMessage('Stahuji novou verzi...');
-                
-                swRegistration.installing.addEventListener('statechange', (e) => {
-                    if (e.target.state === 'installed') {
-                        if (navigator.serviceWorker.controller) {
-                            console.log('New SW installed, activating...');
-                            showSuccessMessage('Aktivuji novou verzi...');
-                            e.target.postMessage({ type: 'SKIP_WAITING' });
-                        }
+                if (swRegistration.waiting) {
+                    // New version available - show iOS-style prompt
+                    if (confirm('Je dostupná nová verze. Chcete aplikaci aktualizovat? Aplikace se restartuje.')) {
+                        console.log('User confirmed update, activating new SW');
+                        showSuccessMessage('Aktivuji novou verzi...');
+                        swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
+                        
+                        // Force immediate reload after short delay
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
                     }
-                });
-                
-            } else {
-                // Strategy 3: No update found, force complete refresh (iOS fallback)
-                console.log('No update found, forcing complete refresh...');
-                showSuccessMessage('Vynucuji úplnou aktualizaci...');
-                
-                // Complete cache clearing and reload sequence
-                swRegistration.unregister().then(() => {
-                    console.log('SW unregistered, clearing caches...');
-                    return caches.keys();
-                }).then(cacheNames => {
-                    return Promise.all(
-                        cacheNames.map(cacheName => {
-                            console.log('Deleting cache:', cacheName);
-                            return caches.delete(cacheName);
-                        })
-                    );
-                }).then(() => {
-                    console.log('All caches cleared, reloading with cache bypass...');
-                    showSuccessMessage('Obnovuji aplikaci...');
-                    setTimeout(() => {
-                        window.location.reload(true); // Hard reload with cache bypass
-                    }, 1000);
-                }).catch(error => {
-                    console.error('Cache clear failed:', error);
-                    // Final fallback - just reload
+                } else if (swRegistration.installing) {
+                    showSuccessMessage('Stahuji novou verzi...');
+                    swRegistration.installing.addEventListener('statechange', (e) => {
+                        if (e.target.state === 'installed') {
+                            if (navigator.serviceWorker.controller) {
+                                if (confirm('Nová verze je připravena. Restartovat aplikaci?')) {
+                                    e.target.postMessage({ type: 'SKIP_WAITING' });
+                                    setTimeout(() => {
+                                        window.location.reload();
+                                    }, 500);
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    // No update found - offer force refresh
+                    if (confirm('Žádná aktualizace nenalezena. Vynutit obnovení cache?')) {
+                        console.log('Force cache refresh requested');
+                        showSuccessMessage('Vynucuji obnovení...');
+                        
+                        // Clear all caches and reload
+                        caches.keys().then(cacheNames => {
+                            return Promise.all(
+                                cacheNames.map(cacheName => {
+                                    console.log('Clearing cache:', cacheName);
+                                    return caches.delete(cacheName);
+                                })
+                            );
+                        }).then(() => {
+                            console.log('All caches cleared');
+                            swRegistration.unregister().then(() => {
+                                window.location.reload(true);
+                            });
+                        });
+                    } else {
+                        showSuccessMessage('Aplikace je aktuální');
+                    }
+                }
+            }).catch(error => {
+                console.error('Update check failed:', error);
+                if (confirm('Chyba při kontrole aktualizací. Restartovat aplikaci?')) {
                     window.location.reload(true);
-                });
-            }
-            
-        }).catch(error => {
-            console.error('Update check failed:', error);
-            // Fallback strategy for iOS - complete cache clear and reload
-            showSuccessMessage('Vynucuji obnovení...');
-            
-            caches.keys().then(cacheNames => {
-                return Promise.all(
-                    cacheNames.map(cacheName => caches.delete(cacheName))
-                );
-            }).then(() => {
-                console.log('Emergency cache clear completed');
-                setTimeout(() => {
-                    window.location.reload(true);
-                }, 1000);
-            }).catch(() => {
-                // Ultimate fallback
-                window.location.reload(true);
+                }
             });
-        });
-        
+        }
     } else {
-        // No service worker available - force hard reload
-        console.log('No SW registration, forcing reload');
-        showSuccessMessage('Obnovuji aplikaci...');
-        setTimeout(() => {
-            window.location.reload(true);
-        }, 1000);
+        // Non-standalone or web browser - simpler update
+        showSuccessMessage('Kontroluji aktualizace...');
+        
+        if (swRegistration) {
+            swRegistration.update().then(() => {
+                if (swRegistration.waiting) {
+                    showSuccessMessage('Nová verze nalezena! Aktivuji...');
+                    swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
+                    
+                    const controllerChangeHandler = () => {
+                        navigator.serviceWorker.removeEventListener('controllerchange', controllerChangeHandler);
+                        window.location.reload();
+                    };
+                    navigator.serviceWorker.addEventListener('controllerchange', controllerChangeHandler);
+                } else {
+                    showSuccessMessage('Aplikace je aktuální');
+                }
+            });
+        } else {
+            // No SW - just reload
+            window.location.reload();
+        }
     }
 }
