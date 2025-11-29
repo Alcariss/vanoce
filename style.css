@@ -343,54 +343,62 @@ body {
 }
 
 .gift-header {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr auto;
     align-items: center;
     margin-bottom: 16px;
     gap: 8px;
-    flex-wrap: nowrap;
+    width: 100%;
 }
 
 .gift-recipient {
     font-weight: 600;
-    font-size: 1.1rem;
+    font-size: 1rem;
     color: #2d3748;
-    display: flex;
+    display: grid;
+    grid-template-columns: auto 1fr;
     align-items: center;
-    gap: 6px;
-    flex: 1;
-    min-width: 0; /* Allow text to shrink */
+    gap: 4px;
+    min-width: 0;
+    overflow: hidden;
 }
 
 .recipient-name {
-    /* Main recipient name styling */
-    flex-shrink: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
 }
 
 .gift-from {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: #718096;
     font-weight: 400;
     font-style: italic;
     white-space: nowrap;
-    flex-shrink: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 80px;
+    justify-self: start;
 }
 
 .gift-status-container {
-    min-width: 100px;
+    width: 90px;
     flex-shrink: 0;
 }
 
 .status-select {
-    padding: 6px 12px !important;
+    width: 100%;
+    padding: 4px 6px !important;
     border: 2px solid #e2e8f0 !important;
-    border-radius: 8px !important;
-    font-size: 0.8rem !important;
+    border-radius: 6px !important;
+    font-size: 0.7rem !important;
     font-weight: 500 !important;
     cursor: pointer !important;
     transition: all 0.2s ease !important;
     outline: none !important;
     background: white !important;
+    max-width: 90px;
 }
 
 .status-select:focus {
@@ -522,39 +530,6 @@ body {
     
     .gift-card {
         padding: 16px;
-    }
-    
-    .gift-header {
-        gap: 6px;
-    }
-    
-    .gift-recipient {
-        font-size: 1rem;
-        gap: 4px;
-    }
-    
-    .recipient-name {
-        max-width: 100px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-    
-    .gift-from {
-        font-size: 0.75rem;
-        max-width: 60px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-    
-    .gift-status-container {
-        min-width: 80px;
-    }
-    
-    .status-select {
-        padding: 4px 8px !important;
-        font-size: 0.7rem !important;
     }
     
     .form-container {
