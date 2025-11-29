@@ -478,36 +478,62 @@ function getVersionInfo() {
 
 // Force PWA update
 function forceUpdate() {
+    showSuccessMessage('Kontroluji aktualizace...');
+    
     if (swRegistration) {
-        showSuccessMessage('Kontroluji aktualizace...');
-        
-        // Check for updates
+        // More aggressive update check for iOS
         swRegistration.update().then(() => {
             if (swRegistration.waiting) {
-                // New service worker is waiting, activate it
+                // New service worker is waiting, activate it immediately
                 showSuccessMessage('Nová verze nalezena! Aktualizuji...');
                 swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
                 
-                // Listen for controlling change
+                // Listen for controlling change and reload
                 navigator.serviceWorker.addEventListener('controllerchange', () => {
-                    // Reload the page when new service worker takes control
                     window.location.reload();
                 });
+            } else if (swRegistration.installing) {
+                // Service worker is installing, wait for it
+                showSuccessMessage('Stahuji novou verzi...');
+                swRegistration.installing.addEventListener('statechange', (e) => {
+                    if (e.target.state === 'installed') {
+                        if (navigator.serviceWorker.controller) {
+                            // New update available
+                            showSuccessMessage('Aktivuji novou verzi...');
+                            swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
+                        }
+                    }
+                });
             } else {
-                // Force check by unregistering and re-registering
+                // Force complete refresh for iOS
+                showSuccessMessage('Vynucuji aktualizaci...');
+                // Unregister and re-register to force fresh cache
                 swRegistration.unregister().then(() => {
-                    showSuccessMessage('Aktualizuji aplikaci...');
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1000);
+                    // Clear all caches
+                    caches.keys().then(cacheNames => {
+                        return Promise.all(
+                            cacheNames.map(cacheName => caches.delete(cacheName))
+                        );
+                    }).then(() => {
+                        // Hard reload with cache bypass
+                        window.location.reload(true);
+                    });
                 });
             }
         }).catch(error => {
             console.error('Update check failed:', error);
-            showErrorMessage('Chyba při kontrole aktualizací');
+            // Fallback for iOS - clear cache and reload
+            showSuccessMessage('Vynucuji obnovení...');
+            caches.keys().then(cacheNames => {
+                return Promise.all(
+                    cacheNames.map(cacheName => caches.delete(cacheName))
+                );
+            }).then(() => {
+                window.location.reload(true);
+            });
         });
     } else {
-        // Fallback - force reload with cache bypass
+        // No service worker - force hard reload
         showSuccessMessage('Obnovuji aplikaci...');
         setTimeout(() => {
             window.location.reload(true);
