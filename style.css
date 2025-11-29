@@ -347,6 +347,8 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 16px;
+    gap: 8px;
+    flex-wrap: nowrap;
 }
 
 .gift-recipient {
@@ -354,23 +356,29 @@ body {
     font-size: 1.1rem;
     color: #2d3748;
     display: flex;
-    align-items: baseline;
-    gap: 8px;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0; /* Allow text to shrink */
 }
 
 .recipient-name {
     /* Main recipient name styling */
+    flex-shrink: 0;
 }
 
 .gift-from {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: #718096;
     font-weight: 400;
     font-style: italic;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .gift-status-container {
-    min-width: 120px;
+    min-width: 100px;
+    flex-shrink: 0;
 }
 
 .status-select {
@@ -513,7 +521,40 @@ body {
     }
     
     .gift-card {
-        padding: 20px;
+        padding: 16px;
+    }
+    
+    .gift-header {
+        gap: 6px;
+    }
+    
+    .gift-recipient {
+        font-size: 1rem;
+        gap: 4px;
+    }
+    
+    .recipient-name {
+        max-width: 100px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    .gift-from {
+        font-size: 0.75rem;
+        max-width: 60px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    .gift-status-container {
+        min-width: 80px;
+    }
+    
+    .status-select {
+        padding: 4px 8px !important;
+        font-size: 0.7rem !important;
     }
     
     .form-container {
