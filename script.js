@@ -25,8 +25,12 @@ function generateFilters() {
         return;
     }
     
-    // Get unique values from Kdo column
-    const uniqueKdo = [...new Set(gifts.map(gift => gift.kdo).filter(kdo => kdo && kdo.trim()))];
+    // Get unique values from Kdo column with better normalization
+    const kdoValues = gifts.map(gift => gift.kdo)
+        .filter(kdo => kdo && kdo.trim()) // Remove empty/null values
+        .map(kdo => kdo.trim()); // Trim whitespace
+    
+    const uniqueKdo = [...new Set(kdoValues)];
     uniqueKdo.sort(); // Sort alphabetically
     
     // Create filter buttons
