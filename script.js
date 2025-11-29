@@ -479,30 +479,38 @@ function getVersionInfo() {
 // Force PWA update
 function forceUpdate() {
     if (swRegistration) {
+        showSuccessMessage('Kontroluji aktualizace...');
+        
         // Check for updates
         swRegistration.update().then(() => {
             if (swRegistration.waiting) {
                 // New service worker is waiting, activate it
+                showSuccessMessage('Nová verze nalezena! Aktualizuji...');
                 swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
                 
-                // Reload the page after a short delay
-                setTimeout(() => {
+                // Listen for controlling change
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    // Reload the page when new service worker takes control
                     window.location.reload();
-                }, 1000);
-                
-                showSuccessMessage('Aplikace se aktualizuje...');
+                });
             } else {
-                showSuccessMessage('Aplikace je již aktuální');
+                // Force check by unregistering and re-registering
+                swRegistration.unregister().then(() => {
+                    showSuccessMessage('Aktualizuji aplikaci...');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                });
             }
         }).catch(error => {
             console.error('Update check failed:', error);
             showErrorMessage('Chyba při kontrole aktualizací');
         });
     } else {
-        // Fallback - just reload
+        // Fallback - force reload with cache bypass
         showSuccessMessage('Obnovuji aplikaci...');
         setTimeout(() => {
-            window.location.reload();
+            window.location.reload(true);
         }, 1000);
     }
 }

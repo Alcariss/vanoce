@@ -1,5 +1,5 @@
-const CACHE_NAME = 'vanocni-darky-v1.0';
-const APP_VERSION = '1.0.0';
+const CACHE_NAME = 'vanocni-darky-v1.1';
+const APP_VERSION = '1.1.0';
 const urlsToCache = [
   './',
   './index.html',
@@ -104,6 +104,11 @@ self.addEventListener('message', event => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     console.log('SKIP_WAITING message received, activating new service worker');
     self.skipWaiting();
+    
+    // Immediately claim all clients
+    self.clients.claim().then(() => {
+      console.log('New service worker claimed all clients');
+    });
   }
   
   if (event.data && event.data.type === 'GET_VERSION') {
