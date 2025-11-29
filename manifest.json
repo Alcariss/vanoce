@@ -1,7 +1,7 @@
 {
   "name": "Vánoční Dárky",
   "short_name": "Dárky",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Přehled vánočních dárků pro celou rodinu - organizace a správa dárků",
   "start_url": "./",
   "scope": "./",
