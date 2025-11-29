@@ -34,6 +34,10 @@
                 <span class="btn-icon">🔄</span>
                 Obnovit
             </button>
+            <button class="btn btn-primary" onclick="toggleAddForm()">
+                <span class="btn-icon">+</span>
+                Přidat dárek
+            </button>
         </div>
 
         <!-- Filters -->
@@ -42,6 +46,41 @@
             <div id="filters" class="filters">
                 <!-- Filter buttons will be populated here -->
             </div>
+        </div>
+
+        <!-- Add Gift Form -->
+        <div id="add-form" class="form-container" style="display: none;">
+            <h3>Přidat nový dárek</h3>
+            <form onsubmit="addGift(event)">
+                <div class="form-group">
+                    <label for="kdo">Pro koho:</label>
+                    <input type="text" id="kdo" name="kdo" required placeholder="Např. Klári">
+                </div>
+                <div class="form-group">
+                    <label for="odKoho">Od koho:</label>
+                    <input type="text" id="odKoho" name="odKoho" placeholder="Např. Honza">
+                </div>
+                <div class="form-group">
+                    <label for="co">Co:</label>
+                    <input type="text" id="co" name="co" required placeholder="Např. Kniha o vaření">
+                </div>
+                <div class="form-group">
+                    <label for="odkaz">Odkaz:</label>
+                    <input type="url" id="odkaz" name="odkaz" placeholder="https://...">
+                </div>
+                <div class="form-group">
+                    <label for="status">Status:</label>
+                    <select id="status" name="status" required>
+                        <option value="Vyjasnit">Vyjasnit</option>
+                        <option value="Objednano">Objednano</option>
+                        <option value="Hotovo">Hotovo</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Přidat dárek</button>
+                    <button type="button" class="btn btn-secondary" onclick="hideAddForm()">Zrušit</button>
+                </div>
+            </form>
         </div>
 
         <!-- Loading -->

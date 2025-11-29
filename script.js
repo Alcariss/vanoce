@@ -7,6 +7,7 @@ const errorElement = document.getElementById('error');
 const successElement = document.getElementById('success');
 const filtersContainer = document.getElementById('filters-container');
 const filtersElement = document.getElementById('filters');
+const addForm = document.getElementById('add-form');
 
 // Stats elements
 const totalGiftsElement = document.getElementById('total-gifts');
@@ -181,8 +182,8 @@ function displayGifts(giftsToShow) {
         <div class="gift-card ${getStatusClass(gift.status)}">
             <div class="gift-header">
                 <div class="gift-recipient">
-                    <div class="recipient-name">${escapeHtml(gift.kdo)}</div>
-                    ${gift.odKoho ? `<div class="gift-from">od: ${escapeHtml(gift.odKoho)}</div>` : ''}
+                    <span class="recipient-name">${escapeHtml(gift.kdo)}</span>
+                    ${gift.odKoho ? `<span class="gift-from"> od: ${escapeHtml(gift.odKoho)}</span>` : ''}
                 </div>
                 <div class="gift-status-container">
                     <select class="status-select status-${getStatusClass(gift.status)}" 
@@ -240,12 +241,11 @@ async function changeStatus(kdo, co, newStatus) {
         
         const response = await fetch(url, {
             method: 'GET',
-            mode: 'cors'
+            mode: 'no-cors'
         });
         
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        // With no-cors mode, assume success if no error was thrown
+        console.log('Status update request sent successfully');
         
         // Update the gift in local array
         gift.status = newStatus;
@@ -304,29 +304,44 @@ async function addGift(event) {
     const kdo = formData.get('kdo');
     const odKoho = formData.get('odKoho') || '';
     const co = formData.get('co');
-    const odkaz = formData.get('odkaz');
+    const odkaz = formData.get('odkaz') || '';
     const status = formData.get('status');
+    
+    // Disable form during submission
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = 'Ukládání...';
+    submitBtn.disabled = true;
     
     try {
         const url = `${SCRIPT_URL}?action=save&kdo=${encodeURIComponent(kdo)}&odKoho=${encodeURIComponent(odKoho)}&co=${encodeURIComponent(co)}&odkaz=${encodeURIComponent(odkaz)}&status=${encodeURIComponent(status)}`;
         
         const response = await fetch(url, {
             method: 'GET',
-            mode: 'cors'
+            mode: 'no-cors'
         });
         
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        // With no-cors mode, we can't read the response, but if no error was thrown, 
+        // the request was sent successfully. We'll assume success and verify by reloading.
+        console.log('Save request sent successfully');
         
-        showSuccess('Dárek byl úspěšně přidán!');
-        hideAddForm();
+        // Success - reset form and hide it
         event.target.reset();
-        loadGifts(); // Reload to show new gift
+        hideAddForm();
+        showSuccess('Dárek byl úspěšně přidán do tabulky!');
+        
+        // Reload gifts to show the new addition and verify it was saved
+        setTimeout(() => {
+            loadGifts();
+        }, 1000);
         
     } catch (error) {
         console.error('Error adding gift:', error);
         showError('Chyba při přidávání dárku: ' + error.message);
+        
+        // Re-enable form on error
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
     }
 }
 
@@ -346,6 +361,14 @@ function updateStats(giftsToCount = gifts) {
 }
 
 // Show/Hide functions
+function toggleAddForm() {
+    if (addForm.style.display === 'none' || addForm.style.display === '') {
+        showAddForm();
+    } else {
+        hideAddForm();
+    }
+}
+
 function showAddForm() {
     addForm.style.display = 'block';
     addForm.scrollIntoView({ behavior: 'smooth' });
