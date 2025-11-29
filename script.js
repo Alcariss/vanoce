@@ -446,9 +446,16 @@ if ('serviceWorker' in navigator) {
                 console.log('SW registered: ', registration);
                 swRegistration = registration;
                 
-                // Check for updates
+                // Check for updates immediately
                 registration.addEventListener('updatefound', () => {
                     console.log('New service worker found!');
+                    const newWorker = registration.installing;
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            console.log('New version available, updating...');
+                            newWorker.postMessage({ type: 'SKIP_WAITING' });
+                        }
+                    });
                 });
                 
                 // Get version info from service worker
@@ -457,6 +464,22 @@ if ('serviceWorker' in navigator) {
             .catch(registrationError => {
                 console.log('SW registration failed: ', registrationError);
             });
+            
+        // Listen for service worker messages
+        navigator.serviceWorker.addEventListener('message', event => {
+            if (event.data.type === 'SW_UPDATED') {
+                console.log('Service worker updated to version:', event.data.version);
+                // Update version display immediately
+                document.getElementById('app-version').textContent = event.data.version;
+            }
+        });
+        
+        // Listen for controller changes
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            console.log('Controller changed, refreshing version info');
+            // Get new version info
+            setTimeout(getVersionInfo, 500);
+        });
     });
 }
 

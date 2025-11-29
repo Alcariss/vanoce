@@ -1,5 +1,5 @@
-const CACHE_NAME = 'vanocni-darky-v1.2';
-const APP_VERSION = '1.2.0';
+const CACHE_NAME = 'vanocni-darky-v1.2.1';
+const APP_VERSION = '1.2.1';
 const urlsToCache = [
   './',
   './index.html',
@@ -36,8 +36,7 @@ self.addEventListener('install', event => {
         console.error('Failed to cache resources:', error);
       })
   );
-  // Force the waiting service worker to become the active service worker
-  // This is more aggressive for iOS PWAs
+  // Force immediate activation - critical for iOS PWA updates
   self.skipWaiting();
 });
 
@@ -86,20 +85,33 @@ self.addEventListener('fetch', event => {
 self.addEventListener('activate', event => {
   console.log('Service Worker activating... Version:', APP_VERSION);
   event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    }).then(() => {
-      console.log('Service Worker activated, claiming clients');
-      // Claim all clients immediately
-      return self.clients.claim();
-    })
+    Promise.all([
+      // Delete all old caches immediately
+      caches.keys().then(cacheNames => {
+        return Promise.all(
+          cacheNames.map(cacheName => {
+            if (cacheName !== CACHE_NAME) {
+              console.log('Deleting old cache:', cacheName);
+              return caches.delete(cacheName);
+            }
+          })
+        );
+      }),
+      // Claim all clients immediately - critical for iOS PWA
+      self.clients.claim().then(() => {
+        console.log('Service Worker activated and claimed all clients');
+        // Notify all clients about the update
+        return self.clients.matchAll().then(clients => {
+          clients.forEach(client => {
+            client.postMessage({
+              type: 'SW_UPDATED',
+              version: APP_VERSION,
+              cacheName: CACHE_NAME
+            });
+          });
+        });
+      })
+    ])
   );
 });
 
