@@ -484,6 +484,12 @@ function searchGifts(query) {
 // Service Worker Registration and Version Management
 let swRegistration = null;
 
+// iOS-specific: Detect if running as standalone app
+const isStandalone = () => {
+  return window.matchMedia('(display-mode: standalone)').matches || 
+         window.navigator.standalone === true;
+};
+
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
@@ -496,9 +502,13 @@ if ('serviceWorker' in navigator) {
                     console.log('New service worker found!');
                     const newWorker = registration.installing;
                     newWorker.addEventListener('statechange', () => {
-                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            console.log('New version available, updating...');
-                            newWorker.postMessage({ type: 'SKIP_WAITING' });
+                        if (newWorker.state === 'installed') {
+                            if (navigator.serviceWorker.controller) {
+                                console.log('New version available, updating...');
+                                newWorker.postMessage({ type: 'SKIP_WAITING' });
+                            } else {
+                                console.log('Content cached for offline use');
+                            }
                         }
                     });
                 });
@@ -512,18 +522,23 @@ if ('serviceWorker' in navigator) {
             
         // Listen for service worker messages
         navigator.serviceWorker.addEventListener('message', event => {
+            console.log('Received SW message:', event.data);
             if (event.data.type === 'SW_UPDATED') {
                 console.log('Service worker updated to version:', event.data.version);
                 // Update version display immediately
                 document.getElementById('app-version').textContent = event.data.version;
+                showSuccessMessage(`Aplikace aktualizována na verzi ${event.data.version}`);
             }
         });
         
-        // Listen for controller changes
+        // Listen for controller changes - important for iOS
         navigator.serviceWorker.addEventListener('controllerchange', () => {
             console.log('Controller changed, refreshing version info');
-            // Get new version info
-            setTimeout(getVersionInfo, 500);
+            // Get new version info after controller change
+            setTimeout(() => {
+                getVersionInfo();
+                showSuccessMessage('Aplikace byla úspěšně aktualizována');
+            }, 500);
         });
     });
 }
@@ -544,64 +559,97 @@ function getVersionInfo() {
     }
 }
 
-// Force PWA update
+// Force PWA update - Enhanced hanushlasky-style mechanism
 function forceUpdate() {
+    console.log('Force update triggered');
     showSuccessMessage('Kontroluji aktualizace...');
     
     if (swRegistration) {
-        // More aggressive update check for iOS
+        // Enhanced update check with multiple strategies
         swRegistration.update().then(() => {
+            console.log('Update check completed');
+            
             if (swRegistration.waiting) {
-                // New service worker is waiting, activate it immediately
-                showSuccessMessage('Nová verze nalezena! Aktualizuji...');
+                // Strategy 1: New service worker is waiting, activate it immediately
+                console.log('New SW waiting, activating...');
+                showSuccessMessage('Nová verze nalezena! Aktivuji...');
                 swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
                 
-                // Listen for controlling change and reload
-                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                // Wait for controllerchange event
+                const controllerChangeHandler = () => {
+                    console.log('Controller changed, reloading...');
+                    navigator.serviceWorker.removeEventListener('controllerchange', controllerChangeHandler);
                     window.location.reload();
-                });
+                };
+                navigator.serviceWorker.addEventListener('controllerchange', controllerChangeHandler);
+                
             } else if (swRegistration.installing) {
-                // Service worker is installing, wait for it
+                // Strategy 2: Service worker is installing, wait for it
+                console.log('SW installing, waiting...');
                 showSuccessMessage('Stahuji novou verzi...');
+                
                 swRegistration.installing.addEventListener('statechange', (e) => {
                     if (e.target.state === 'installed') {
                         if (navigator.serviceWorker.controller) {
-                            // New update available
+                            console.log('New SW installed, activating...');
                             showSuccessMessage('Aktivuji novou verzi...');
-                            swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
+                            e.target.postMessage({ type: 'SKIP_WAITING' });
                         }
                     }
                 });
+                
             } else {
-                // Force complete refresh for iOS
-                showSuccessMessage('Vynucuji aktualizaci...');
-                // Unregister and re-register to force fresh cache
+                // Strategy 3: No update found, force complete refresh (iOS fallback)
+                console.log('No update found, forcing complete refresh...');
+                showSuccessMessage('Vynucuji úplnou aktualizaci...');
+                
+                // Complete cache clearing and reload sequence
                 swRegistration.unregister().then(() => {
-                    // Clear all caches
-                    caches.keys().then(cacheNames => {
-                        return Promise.all(
-                            cacheNames.map(cacheName => caches.delete(cacheName))
-                        );
-                    }).then(() => {
-                        // Hard reload with cache bypass
-                        window.location.reload(true);
-                    });
+                    console.log('SW unregistered, clearing caches...');
+                    return caches.keys();
+                }).then(cacheNames => {
+                    return Promise.all(
+                        cacheNames.map(cacheName => {
+                            console.log('Deleting cache:', cacheName);
+                            return caches.delete(cacheName);
+                        })
+                    );
+                }).then(() => {
+                    console.log('All caches cleared, reloading with cache bypass...');
+                    showSuccessMessage('Obnovuji aplikaci...');
+                    setTimeout(() => {
+                        window.location.reload(true); // Hard reload with cache bypass
+                    }, 1000);
+                }).catch(error => {
+                    console.error('Cache clear failed:', error);
+                    // Final fallback - just reload
+                    window.location.reload(true);
                 });
             }
+            
         }).catch(error => {
             console.error('Update check failed:', error);
-            // Fallback for iOS - clear cache and reload
+            // Fallback strategy for iOS - complete cache clear and reload
             showSuccessMessage('Vynucuji obnovení...');
+            
             caches.keys().then(cacheNames => {
                 return Promise.all(
                     cacheNames.map(cacheName => caches.delete(cacheName))
                 );
             }).then(() => {
+                console.log('Emergency cache clear completed');
+                setTimeout(() => {
+                    window.location.reload(true);
+                }, 1000);
+            }).catch(() => {
+                // Ultimate fallback
                 window.location.reload(true);
             });
         });
+        
     } else {
-        // No service worker - force hard reload
+        // No service worker available - force hard reload
+        console.log('No SW registration, forcing reload');
         showSuccessMessage('Obnovuji aplikaci...');
         setTimeout(() => {
             window.location.reload(true);
