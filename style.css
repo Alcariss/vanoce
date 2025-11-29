@@ -346,33 +346,43 @@ body {
     font-style: italic;
 }
 
-.gift-status {
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+.gift-status-container {
+    min-width: 120px;
 }
 
-.status-pending {
-    background: #fed7ad;
-    color: #c05621;
+.status-select {
+    padding: 6px 12px !important;
+    border: 2px solid #e2e8f0 !important;
+    border-radius: 8px !important;
+    font-size: 0.8rem !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    outline: none !important;
+    background: white !important;
 }
 
-.status-bought {
-    background: #c6f6d5;
-    color: #276749;
+.status-select:focus {
+    border-color: #667eea !important;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
 }
 
-.status-wrapped {
-    background: #bee3f8;
-    color: #2c5282;
+.status-select.status-pending {
+    background: #fed7ad !important;
+    color: #c05621 !important;
+    border-color: #ed8936 !important;
 }
 
-.status-given {
-    background: #e9d8fd;
-    color: #553c9a;
+.status-select.status-wrapped {
+    background: #bee3f8 !important;
+    color: #2c5282 !important;
+    border-color: #3182ce !important;
+}
+
+.status-select.status-bought {
+    background: #c6f6d5 !important;
+    color: #276749 !important;
+    border-color: #38a169 !important;
 }
 
 .gift-item {

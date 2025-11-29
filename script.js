@@ -1,9 +1,10 @@
 // Configuration
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby222lTYp_b7pU9S2Oxnn9mpBrwl9xhS_fVR4rgAwmrqGrvxInnJONbjDQoVGGz1ZevzQ/exec'
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbym7YMvy50cL_B7rocGmrRWmWJanAJaBXPzApRrKJQQpyWXcHVIv96vjLgMaGVn1EWU7g/exec'
 // DOM Elements
 const giftsContainer = document.getElementById('gifts-container');
 const loading = document.getElementById('loading');
 const errorElement = document.getElementById('error');
+const successElement = document.getElementById('success');
 const filtersContainer = document.getElementById('filters-container');
 const filtersElement = document.getElementById('filters');
 
@@ -183,7 +184,14 @@ function displayGifts(giftsToShow) {
                     <div class="recipient-name">${escapeHtml(gift.kdo)}</div>
                     ${gift.odKoho ? `<div class="gift-from">od: ${escapeHtml(gift.odKoho)}</div>` : ''}
                 </div>
-                <div class="gift-status status-${getStatusClass(gift.status)}">${escapeHtml(gift.status)}</div>
+                <div class="gift-status-container">
+                    <select class="status-select status-${getStatusClass(gift.status)}" 
+                            onchange="changeStatus('${escapeHtml(gift.kdo)}', '${escapeHtml(gift.co)}', this.value)">
+                        <option value="Vyjasnit" ${gift.status === 'Vyjasnit' ? 'selected' : ''}>Vyjasnit</option>
+                        <option value="Objednano" ${gift.status === 'Objednano' ? 'selected' : ''}>Objednano</option>
+                        <option value="Hotovo" ${gift.status === 'Hotovo' ? 'selected' : ''}>Hotovo</option>
+                    </select>
+                </div>
             </div>
             <div class="gift-item">${escapeHtml(gift.co)}</div>
             ${gift.odkaz ? `
@@ -199,54 +207,66 @@ function displayGifts(giftsToShow) {
 
 // Get status class for styling
 function getStatusClass(status) {
+    if (!status) return 'pending';
+    
     switch (status.toLowerCase()) {
         case 'hotovo':
-        case 'koupeno':
             return 'bought';
-        case 'zabaleno':
+        case 'objednano':
             return 'wrapped';
-        case 'darováno':
-            return 'given';
-        case 'poslat tip':
-        case 'nepořízeno':
+        case 'vyjasnit':
+        case 'vyjasnit':
         default:
             return 'pending';
     }
 }
 
-// Get next status text for button
-function getNextStatusText(currentStatus) {
-    switch (currentStatus) {
-        case 'Nepořízeno':
-            return '✅ Označit jako koupeno';
-        case 'Koupeno':
-            return '📦 Označit jako zabaleno';
-        case 'Zabaleno':
-            return '🎁 Označit jako darováno';
-        case 'Darováno':
-            return '🔄 Označit jako nepořízeno';
-        default:
-            return '✅ Označit jako koupeno';
+
+
+// Change gift status
+async function changeStatus(kdo, co, newStatus) {
+    // Find the gift and its details
+    const gift = gifts.find(g => g.kdo === kdo && g.co === co);
+    if (!gift) {
+        showError('Dárek nebyl nalezen');
+        return;
+    }
+    
+    const odKoho = gift.odKoho || '';
+    const odkaz = gift.odkaz || '';
+    
+    try {
+        const url = `${SCRIPT_URL}?action=save&kdo=${encodeURIComponent(kdo)}&odKoho=${encodeURIComponent(odKoho)}&co=${encodeURIComponent(co)}&odkaz=${encodeURIComponent(odkaz)}&status=${encodeURIComponent(newStatus)}`;
+        
+        const response = await fetch(url, {
+            method: 'GET',
+            mode: 'cors'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        // Update the gift in local array
+        gift.status = newStatus;
+        
+        // Re-render the current filtered view
+        const filteredGifts = currentFilter === 'all' ? gifts : gifts.filter(g => g.kdo === currentFilter);
+        displayGifts(filteredGifts);
+        updateStats(filteredGifts);
+        generateFilters();
+        
+        showSuccess(`Status dárku pro ${kdo} byl změněn na "${newStatus}"`);
+        
+    } catch (error) {
+        console.error('Error updating status:', error);
+        showError('Chyba při aktualizaci statusu: ' + error.message);
+        // Reload to get fresh data in case of error
+        loadGifts();
     }
 }
 
-// Get next status
-function getNextStatus(currentStatus) {
-    switch (currentStatus) {
-        case 'Nepořízeno':
-            return 'Koupeno';
-        case 'Koupeno':
-            return 'Zabaleno';
-        case 'Zabaleno':
-            return 'Darováno';
-        case 'Darováno':
-            return 'Nepořízeno';
-        default:
-            return 'Koupeno';
-    }
-}
-
-// Toggle gift status
+// Toggle gift status (legacy function - keeping for compatibility)
 async function toggleStatus(kdo, co, currentStatus) {
     const newStatus = getNextStatus(currentStatus);
     
@@ -314,10 +334,10 @@ async function addGift(event) {
 function updateStats(giftsToCount = gifts) {
     const total = giftsToCount.length;
     const bought = giftsToCount.filter(g => 
-        ['hotovo', 'koupeno', 'zabaleno', 'darováno'].includes(g.status.toLowerCase())
+        g.status && g.status.toLowerCase() === 'hotovo'
     ).length;
     const pending = giftsToCount.filter(g => 
-        ['poslat tip', 'nepořízeno', ''].includes(g.status.toLowerCase())
+        !g.status || ['vyjasnit', 'objednano', ''].includes(g.status.toLowerCase())
     ).length;
     
     totalGiftsElement.textContent = total;

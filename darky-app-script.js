@@ -68,24 +68,54 @@ function doGet(e) {
           });
       }
       
-      const spreadsheetId = '1FYRVHTryLRPBaZxhlm3XzKigzK7miJvVSSB_Eu--Z4o';
+      const spreadsheetId = '17t-3sEqlnF9o6aklvfv4yfZJJOJA0ZzwPFf-ezSQwXI';
       const spreadsheet = SpreadsheetApp.openById(spreadsheetId);
       const sheet = spreadsheet.getSheets()[0];
       
-      // Add the gift to the sheet
-      sheet.appendRow([kdo, odKoho, co, odkaz, status]);
+      // Check if this is an update (find existing row) or new addition
+      const lastRow = sheet.getLastRow();
+      let foundRow = -1;
       
-      console.log('Successfully added row:', [kdo, odKoho, co, odkaz, status]);
-      console.log('Total rows now:', sheet.getLastRow());
+      if (lastRow > 1) {
+        const data = sheet.getRange(1, 1, lastRow, 5).getValues();
+        
+        // Look for existing row (skip header row)
+        for (let i = 1; i < data.length; i++) {
+          if (data[i][0] === kdo && data[i][2] === co) {
+            foundRow = i + 1; // +1 because getRange is 1-indexed
+            break;
+          }
+        }
+      }
       
-      return ContentService
-        .createTextOutput('SUCCESS: Gift added to row ' + sheet.getLastRow())
-        .setMimeType(ContentService.MimeType.TEXT)
-        .setHeaders({
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type'
-        });
+      if (foundRow > 0) {
+        // Update existing row
+        sheet.getRange(foundRow, 1, 1, 5).setValues([[kdo, odKoho, co, odkaz, status]]);
+        console.log('Successfully updated row', foundRow + ':', [kdo, odKoho, co, odkaz, status]);
+        
+        return ContentService
+          .createTextOutput('SUCCESS: Gift updated in row ' + foundRow)
+          .setMimeType(ContentService.MimeType.TEXT)
+          .setHeaders({
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type'
+          });
+      } else {
+        // Add new row
+        sheet.appendRow([kdo, odKoho, co, odkaz, status]);
+        console.log('Successfully added new row:', [kdo, odKoho, co, odkaz, status]);
+        console.log('Total rows now:', sheet.getLastRow());
+        
+        return ContentService
+          .createTextOutput('SUCCESS: Gift added to row ' + sheet.getLastRow())
+          .setMimeType(ContentService.MimeType.TEXT)
+          .setHeaders({
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type'
+          });
+      }
         
     } else {
       // Legacy quote functionality for backward compatibility
@@ -105,7 +135,7 @@ function doGet(e) {
           });
       }
       
-      const spreadsheetId = '1FYRVHTryLRPBaZxhlm3XzKigzK7miJvVSSB_Eu--Z4o';
+      const spreadsheetId = '17t-3sEqlnF9o6aklvfv4yfZJJOJA0ZzwPFf-ezSQwXI';
       const spreadsheet = SpreadsheetApp.openById(spreadsheetId);
       const sheet = spreadsheet.getSheets()[0];
       
