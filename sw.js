@@ -6,9 +6,15 @@ const urlsToCache = [
   './manifest.json',
   './style.css',
   './script.js',
-  './icon-180.png',
-  './icon-192.png',
-  './icon-512.png'
+  './icon-16.png',
+  './icon-29.png',
+  './icon-40.png',
+  './icon-60.png',
+  './icon-76.png',
+  './icon-120.png',
+  './icon-152.png',
+  './icon-167.png',
+  './icon-180.png'
 ];
 
 // iOS-specific: Detect if running as standalone app
