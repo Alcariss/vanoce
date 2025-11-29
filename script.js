@@ -436,15 +436,73 @@ function searchGifts(query) {
     displayGifts(filteredGifts);
 }
 
-// Service Worker Registration
+// Service Worker Registration and Version Management
+let swRegistration = null;
+
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
             .then(registration => {
                 console.log('SW registered: ', registration);
+                swRegistration = registration;
+                
+                // Check for updates
+                registration.addEventListener('updatefound', () => {
+                    console.log('New service worker found!');
+                });
+                
+                // Get version info from service worker
+                getVersionInfo();
             })
             .catch(registrationError => {
                 console.log('SW registration failed: ', registrationError);
             });
     });
+}
+
+// Get version info from service worker
+function getVersionInfo() {
+    if (navigator.serviceWorker.controller) {
+        const messageChannel = new MessageChannel();
+        messageChannel.port1.onmessage = (event) => {
+            if (event.data.type === 'VERSION_INFO') {
+                document.getElementById('app-version').textContent = event.data.version;
+            }
+        };
+        navigator.serviceWorker.controller.postMessage(
+            { type: 'GET_VERSION' },
+            [messageChannel.port2]
+        );
+    }
+}
+
+// Force PWA update
+function forceUpdate() {
+    if (swRegistration) {
+        // Check for updates
+        swRegistration.update().then(() => {
+            if (swRegistration.waiting) {
+                // New service worker is waiting, activate it
+                swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
+                
+                // Reload the page after a short delay
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+                
+                showSuccessMessage('Aplikace se aktualizuje...');
+            } else {
+                showSuccessMessage('Aplikace je již aktuální');
+            }
+        }).catch(error => {
+            console.error('Update check failed:', error);
+            showErrorMessage('Chyba při kontrole aktualizací');
+        });
+    } else {
+        // Fallback - just reload
+        showSuccessMessage('Obnovuji aplikaci...');
+        setTimeout(() => {
+            window.location.reload();
+        }, 1000);
+    }
 }
