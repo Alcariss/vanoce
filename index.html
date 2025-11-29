@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vánoční Dárky</title>
+    <link rel="stylesheet" href="style.css?v=2">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🎄 Vánoční Dárky</h1>
+            <p class="subtitle">Přehled vánočních dárků pro celou rodinu</p>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="total-gifts">0</div>
+                <div class="stat-label">Celkem dárků</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="bought-gifts">0</div>
+                <div class="stat-label">Koupeno</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="pending-gifts">0</div>
+                <div class="stat-label">Zbývá koupit</div>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button class="btn btn-secondary" onclick="loadGifts()">
+                <span class="btn-icon">🔄</span>
+                Obnovit
+            </button>
+        </div>
+
+        <!-- Filters -->
+        <div id="filters-container" class="filters-container" style="display: none;">
+            <h3 class="filters-title">Filtrovat podle příjemce:</h3>
+            <div id="filters" class="filters">
+                <!-- Filter buttons will be populated here -->
+            </div>
+        </div>
+
+        <!-- Loading -->
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Načítání...</p>
+        </div>
+
+        <!-- Error Message -->
+        <div id="error" class="error" style="display: none;"></div>
+
+        <!-- Gifts Grid -->
+        <div id="gifts-container" class="gifts-grid">
+            <!-- Gifts will be populated here -->
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
