@@ -187,7 +187,7 @@ function displayGifts(giftsToShow) {
             <div class="gift-header">
                 <div class="gift-recipient">
                     <span class="recipient-name">${escapeHtml(gift.kdo)}</span>
-                    ${gift.odKoho ? `<span class="gift-from"> od: ${escapeHtml(gift.odKoho)}</span>` : ''}
+                    ${gift.odKoho ? `<span class="gift-from">${escapeHtml(gift.odKoho)}</span>` : ''}
                 </div>
                 <div class="gift-status-container">
                     <select class="status-select status-${getStatusClass(gift.status)}" 
