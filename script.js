@@ -349,19 +349,64 @@ async function addGift(event) {
     }
 }
 
-// Update statistics
+// Update statistics and progress bar
 function updateStats(giftsToCount = gifts) {
     const total = giftsToCount.length;
-    const bought = giftsToCount.filter(g => 
+    const vyjasnitCount = giftsToCount.filter(g => 
+        !g.status || g.status.toLowerCase() === 'vyjasnit' || g.status === ''
+    ).length;
+    const objednanoCount = giftsToCount.filter(g => 
+        g.status && g.status.toLowerCase() === 'objednano'
+    ).length;
+    const hotovoCount = giftsToCount.filter(g => 
         g.status && g.status.toLowerCase() === 'hotovo'
     ).length;
-    const pending = giftsToCount.filter(g => 
-        !g.status || ['vyjasnit', 'objednano', ''].includes(g.status.toLowerCase())
-    ).length;
     
+    // Update total
     totalGiftsElement.textContent = total;
-    boughtGiftsElement.textContent = bought;
-    pendingGiftsElement.textContent = pending;
+    
+    // Update count elements
+    const vyjasnitElement = document.getElementById('vyjasnit-count');
+    const objednanoElement = document.getElementById('objednano-count');
+    const hotovoElement = document.getElementById('hotovo-count');
+    
+    if (vyjasnitElement) vyjasnitElement.textContent = vyjasnitCount;
+    if (objednanoElement) objednanoElement.textContent = objednanoCount;
+    if (hotovoElement) hotovoElement.textContent = hotovoCount;
+    
+    // Update progress bar
+    updateProgressBar(vyjasnitCount, objednanoCount, hotovoCount, total);
+    
+    // Update old elements for backward compatibility
+    if (boughtGiftsElement) boughtGiftsElement.textContent = hotovoCount;
+    if (pendingGiftsElement) pendingGiftsElement.textContent = total - hotovoCount;
+}
+
+// Update progress bar segments
+function updateProgressBar(vyjasnit, objednano, hotovo, total) {
+    const vyjasnitSegment = document.getElementById('progress-vyjasnit');
+    const objednanoSegment = document.getElementById('progress-objednano');
+    const hotovoSegment = document.getElementById('progress-hotovo');
+    
+    if (!vyjasnitSegment || !objednanoSegment || !hotovoSegment) return;
+    
+    if (total === 0) {
+        // No gifts - hide all segments
+        vyjasnitSegment.style.width = '0%';
+        objednanoSegment.style.width = '0%';
+        hotovoSegment.style.width = '0%';
+        return;
+    }
+    
+    // Calculate percentages
+    const vyjasnitPercent = (vyjasnit / total) * 100;
+    const objednanoPercent = (objednano / total) * 100;
+    const hotovoPercent = (hotovo / total) * 100;
+    
+    // Apply widths with smooth animation
+    vyjasnitSegment.style.width = `${vyjasnitPercent}%`;
+    objednanoSegment.style.width = `${objednanoPercent}%`;
+    hotovoSegment.style.width = `${hotovoPercent}%`;
 }
 
 // Show/Hide functions

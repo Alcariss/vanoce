@@ -27,18 +27,33 @@
             </div>
         </header>
 
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-number" id="total-gifts">0</div>
-                <div class="stat-label">Celkem dárků</div>
+        <div class="dashboard-card">
+            <div class="dashboard-header">
+                <h3>Přehled dárků</h3>
+                <div class="total-info">
+                    Celkem: <span id="total-gifts">0</span> dárků
+                </div>
             </div>
-            <div class="stat-card">
-                <div class="stat-number" id="bought-gifts">0</div>
-                <div class="stat-label">Koupeno</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" id="pending-gifts">0</div>
-                <div class="stat-label">Zbývá koupit</div>
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-segment vyjasnit" id="progress-vyjasnit"></div>
+                    <div class="progress-segment objednano" id="progress-objednano"></div>
+                    <div class="progress-segment hotovo" id="progress-hotovo"></div>
+                </div>
+                <div class="progress-legend">
+                    <div class="legend-item">
+                        <span class="legend-color vyjasnit"></span>
+                        <span>Vyjasnit: <span id="vyjasnit-count">0</span></span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color objednano"></span>
+                        <span>Objednáno: <span id="objednano-count">0</span></span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color hotovo"></span>
+                        <span>Hotovo: <span id="hotovo-count">0</span></span>
+                    </div>
+                </div>
             </div>
         </div>
 
