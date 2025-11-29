@@ -358,7 +358,7 @@ body {
     display: grid;
     grid-template-columns: auto 1fr;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     min-width: 0;
     overflow: hidden;
 }
@@ -367,23 +367,23 @@ body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 120px;
+    max-width: 100px;
 }
 
 .gift-from {
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     color: #718096;
     font-weight: 400;
     font-style: italic;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 80px;
+    max-width: 100px;
     justify-self: start;
 }
 
 .gift-status-container {
-    width: 90px;
+    width: 80px;
     flex-shrink: 0;
 }
 
@@ -398,7 +398,7 @@ body {
     transition: all 0.2s ease !important;
     outline: none !important;
     background: white !important;
-    max-width: 90px;
+    max-width: 80px;
 }
 
 .status-select:focus {
