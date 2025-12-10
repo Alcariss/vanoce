@@ -17,6 +17,8 @@ const pendingGiftsElement = document.getElementById('pending-gifts');
 // Global state
 let gifts = [];
 let currentFilter = 'all';
+let autoRefreshInterval = null;
+let lastDataHash = null;
 
 // Generate filter buttons based on unique Kdo values
 function generateFilters() {
@@ -91,12 +93,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     loadGifts();
+    
+    // Start auto-refresh to detect external changes
+    startAutoRefresh();
 });
 
 // Load gifts from Google Apps Script using JSONP
-async function loadGifts() {
-    showLoading();
-    hideError();
+async function loadGifts(silent = false) {
+    if (!silent) {
+        showLoading();
+        hideError();
+    }
     
     try {
         // Use JSONP to completely bypass CORS
@@ -147,6 +154,13 @@ async function loadGifts() {
         console.log('Processed gifts:', gifts);
         console.log('Number of gifts:', gifts.length);
         
+        // Calculate data hash to detect changes
+        const currentDataHash = JSON.stringify(gifts);
+        if (lastDataHash && lastDataHash !== currentDataHash && !silent) {
+            showSuccessMessage('Data byla aktualizována z tabulky');
+        }
+        lastDataHash = currentDataHash;
+        
         // Debug: log each gift individually
         gifts.forEach((gift, index) => {
             console.log(`Gift ${index}:`, {
@@ -162,12 +176,17 @@ async function loadGifts() {
         updateStats(gifts);
         generateFilters();
         currentFilter = 'all';
-        hideLoading();
+        
+        if (!silent) {
+            hideLoading();
+        }
         
     } catch (error) {
         console.error('Error loading gifts:', error);
-        showError('Chyba při načítání dárků: ' + error.message);
-        hideLoading();
+        if (!silent) {
+            showError('Chyba při načítání dárků: ' + error.message);
+            hideLoading();
+        }
     }
 }
 
@@ -370,6 +389,41 @@ async function addGift(event) {
         submitBtn.disabled = false;
     }
 }
+
+// Auto-refresh functionality to detect external sheet changes
+function startAutoRefresh() {
+    // Refresh every 30 seconds to detect external changes
+    autoRefreshInterval = setInterval(async () => {
+        console.log('Auto-refresh: Checking for external changes...');
+        try {
+            await loadGifts(true); // Silent mode - no loading indicators
+        } catch (error) {
+            console.error('Auto-refresh failed:', error);
+            // Don't show error for auto-refresh failures to avoid spam
+        }
+    }, 30000); // 30 seconds
+    
+    console.log('Auto-refresh started (every 30 seconds)');
+}
+
+function stopAutoRefresh() {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+        autoRefreshInterval = null;
+        console.log('Auto-refresh stopped');
+    }
+}
+
+// Stop auto-refresh when page is hidden to save resources
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        stopAutoRefresh();
+    } else {
+        startAutoRefresh();
+        // Immediate refresh when page becomes visible
+        setTimeout(() => loadGifts(true), 1000);
+    }
+});
 
 // Update statistics and progress bar
 function updateStats(giftsToCount = gifts) {
