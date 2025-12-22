@@ -135,16 +135,20 @@ body {
     background: linear-gradient(45deg, #3182ce, #63b3ed);
 }
 
+.progress-segment.zabaleno {
+    background: linear-gradient(45deg, #805ad5, #b794f6);
+}
+
 .progress-segment.hotovo {
     background: linear-gradient(45deg, #38a169, #68d391);
 }
 
 .progress-legend {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 16px;
     width: 100%;
-    max-width: 400px;
+    max-width: 500px;
 }
 
 .legend-item {
@@ -169,6 +173,10 @@ body {
 
 .legend-color.objednano {
     background: linear-gradient(45deg, #3182ce, #63b3ed);
+}
+
+.legend-color.zabaleno {
+    background: linear-gradient(45deg, #805ad5, #b794f6);
 }
 
 .legend-color.hotovo {
@@ -497,10 +505,16 @@ body {
     border-color: #ed8936 !important;
 }
 
-.status-select.status-wrapped {
+.status-select.status-ordered {
     background: #bee3f8 !important;
     color: #2c5282 !important;
     border-color: #3182ce !important;
+}
+
+.status-select.status-wrapped {
+    background: #e9d8fd !important;
+    color: #553c9a !important;
+    border-color: #805ad5 !important;
 }
 
 .status-select.status-bought {

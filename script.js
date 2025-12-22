@@ -94,6 +94,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     loadGifts();
     
+    // Initialize recipient dropdown
+    setupRecipientDropdown();
+    
     // Start auto-refresh to detect external changes
     startAutoRefresh();
 });
@@ -175,6 +178,7 @@ async function loadGifts(silent = false) {
         displayGifts(gifts);
         updateStats(gifts);
         generateFilters();
+        populateRecipientDropdown();
         currentFilter = 'all';
         
         if (!silent) {
@@ -235,6 +239,7 @@ function displayGifts(giftsToShow) {
                             onchange="changeStatus('${escapeHtml(gift.kdo)}', '${escapeHtml(gift.co)}', this.value)">
                         <option value="Vyjasnit" ${gift.status === 'Vyjasnit' ? 'selected' : ''}>Vyjasnit</option>
                         <option value="Objednano" ${gift.status === 'Objednano' ? 'selected' : ''}>Objednano</option>
+                        <option value="Zabaleno" ${gift.status === 'Zabaleno' ? 'selected' : ''}>Zabaleno</option>
                         <option value="Hotovo" ${gift.status === 'Hotovo' ? 'selected' : ''}>Hotovo</option>
                     </select>
                 </div>
@@ -258,8 +263,10 @@ function getStatusClass(status) {
     switch (status.toLowerCase()) {
         case 'hotovo':
             return 'bought';
-        case 'objednano':
+        case 'zabaleno':
             return 'wrapped';
+        case 'objednano':
+            return 'ordered';
         case 'vyjasnit':
         case 'vyjasnit':
         default:
@@ -300,6 +307,7 @@ async function changeStatus(kdo, co, newStatus) {
         displayGifts(filteredGifts);
         updateStats(filteredGifts);
         generateFilters();
+        populateRecipientDropdown();
         
         showSuccess(`Status dárku pro ${kdo} byl změněn na "${newStatus}"`);
         
@@ -346,7 +354,21 @@ async function addGift(event) {
     event.preventDefault();
     
     const formData = new FormData(event.target);
-    const kdo = formData.get('kdo');
+    let kdo = formData.get('kdo');
+    
+    // Handle new recipient input
+    const recipientSelect = document.getElementById('kdo');
+    const newRecipientInput = document.getElementById('kdo-new');
+    
+    if (kdo === '__new__' || kdo === '') {
+        const newRecipient = newRecipientInput.value.trim();
+        if (!newRecipient) {
+            showError('Zadejte jméno příjemce');
+            return;
+        }
+        kdo = newRecipient;
+    }
+    
     const odKoho = formData.get('odKoho') || '';
     const co = formData.get('co');
     const odkaz = formData.get('odkaz') || '';
@@ -372,6 +394,12 @@ async function addGift(event) {
         
         // Success - reset form and hide it
         event.target.reset();
+        resetRecipientDropdown();
+        
+        // Re-enable submit button
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+        
         hideAddForm();
         showSuccess('Dárek byl úspěšně přidán do tabulky!');
         
@@ -434,6 +462,9 @@ function updateStats(giftsToCount = gifts) {
     const objednanoCount = giftsToCount.filter(g => 
         g.status && g.status.toLowerCase() === 'objednano'
     ).length;
+    const zabalenoCount = giftsToCount.filter(g => 
+        g.status && g.status.toLowerCase() === 'zabaleno'
+    ).length;
     const hotovoCount = giftsToCount.filter(g => 
         g.status && g.status.toLowerCase() === 'hotovo'
     ).length;
@@ -444,14 +475,16 @@ function updateStats(giftsToCount = gifts) {
     // Update count elements
     const vyjasnitElement = document.getElementById('vyjasnit-count');
     const objednanoElement = document.getElementById('objednano-count');
+    const zabalenoElement = document.getElementById('zabaleno-count');
     const hotovoElement = document.getElementById('hotovo-count');
     
     if (vyjasnitElement) vyjasnitElement.textContent = vyjasnitCount;
     if (objednanoElement) objednanoElement.textContent = objednanoCount;
+    if (zabalenoElement) zabalenoElement.textContent = zabalenoCount;
     if (hotovoElement) hotovoElement.textContent = hotovoCount;
     
     // Update progress bar
-    updateProgressBar(vyjasnitCount, objednanoCount, hotovoCount, total);
+    updateProgressBar(vyjasnitCount, objednanoCount, zabalenoCount, hotovoCount, total);
     
     // Update old elements for backward compatibility
     if (boughtGiftsElement) boughtGiftsElement.textContent = hotovoCount;
@@ -459,17 +492,19 @@ function updateStats(giftsToCount = gifts) {
 }
 
 // Update progress bar segments
-function updateProgressBar(vyjasnit, objednano, hotovo, total) {
+function updateProgressBar(vyjasnit, objednano, zabaleno, hotovo, total) {
     const vyjasnitSegment = document.getElementById('progress-vyjasnit');
     const objednanoSegment = document.getElementById('progress-objednano');
+    const zabalenoSegment = document.getElementById('progress-zabaleno');
     const hotovoSegment = document.getElementById('progress-hotovo');
     
-    if (!vyjasnitSegment || !objednanoSegment || !hotovoSegment) return;
+    if (!vyjasnitSegment || !objednanoSegment || !zabalenoSegment || !hotovoSegment) return;
     
     if (total === 0) {
         // No gifts - hide all segments
         vyjasnitSegment.style.width = '0%';
         objednanoSegment.style.width = '0%';
+        zabalenoSegment.style.width = '0%';
         hotovoSegment.style.width = '0%';
         return;
     }
@@ -477,11 +512,13 @@ function updateProgressBar(vyjasnit, objednano, hotovo, total) {
     // Calculate percentages
     const vyjasnitPercent = (vyjasnit / total) * 100;
     const objednanoPercent = (objednano / total) * 100;
+    const zabalenoPercent = (zabaleno / total) * 100;
     const hotovoPercent = (hotovo / total) * 100;
     
     // Apply widths with smooth animation
     vyjasnitSegment.style.width = `${vyjasnitPercent}%`;
     objednanoSegment.style.width = `${objednanoPercent}%`;
+    zabalenoSegment.style.width = `${zabalenoPercent}%`;
     hotovoSegment.style.width = `${hotovoPercent}%`;
 }
 
@@ -496,6 +533,16 @@ function toggleAddForm() {
 
 function showAddForm() {
     addForm.style.display = 'block';
+    populateRecipientDropdown();
+    setupRecipientDropdown();
+    
+    // Ensure submit button is enabled
+    const submitBtn = addForm.querySelector('button[type="submit"]');
+    if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Přidat dárek';
+    }
+    
     addForm.scrollIntoView({ behavior: 'smooth' });
 }
 
@@ -529,6 +576,81 @@ function showSuccess(message) {
 
 function hideSuccess() {
     successElement.style.display = 'none';
+}
+
+// Recipient dropdown functionality
+function populateRecipientDropdown() {
+    const recipientSelect = document.getElementById('kdo');
+    if (!recipientSelect || gifts.length === 0) return;
+    
+    // Get unique recipients from existing gifts
+    const recipients = gifts.map(gift => gift.kdo)
+        .filter(kdo => kdo && kdo.trim())
+        .map(kdo => kdo.trim());
+    
+    const uniqueRecipients = [...new Set(recipients)];
+    uniqueRecipients.sort();
+    
+    // Clear existing options except the first one
+    recipientSelect.innerHTML = '<option value="">Vyberte příjemce...</option>';
+    
+    // Add existing recipients as options
+    uniqueRecipients.forEach(recipient => {
+        const option = document.createElement('option');
+        option.value = recipient;
+        option.textContent = recipient;
+        recipientSelect.appendChild(option);
+    });
+    
+    // Add "new recipient" option
+    const newOption = document.createElement('option');
+    newOption.value = '__new__';
+    newOption.textContent = '+ Nový příjemce...';
+    recipientSelect.appendChild(newOption);
+}
+
+function setupRecipientDropdown() {
+    const recipientSelect = document.getElementById('kdo');
+    const newRecipientInput = document.getElementById('kdo-new');
+    const addNewRecipientBtn = document.getElementById('add-new-recipient');
+    
+    if (!recipientSelect || !newRecipientInput || !addNewRecipientBtn) return;
+    
+    // Handle dropdown change
+    recipientSelect.addEventListener('change', function() {
+        if (this.value === '__new__') {
+            newRecipientInput.style.display = 'block';
+            newRecipientInput.focus();
+            newRecipientInput.required = true;
+            this.required = false;
+        } else {
+            newRecipientInput.style.display = 'none';
+            newRecipientInput.required = false;
+            this.required = true;
+        }
+    });
+    
+    // Handle "Add new recipient" button
+    addNewRecipientBtn.addEventListener('click', function() {
+        recipientSelect.value = '__new__';
+        newRecipientInput.style.display = 'block';
+        newRecipientInput.focus();
+        newRecipientInput.required = true;
+        recipientSelect.required = false;
+    });
+}
+
+function resetRecipientDropdown() {
+    const recipientSelect = document.getElementById('kdo');
+    const newRecipientInput = document.getElementById('kdo-new');
+    
+    if (recipientSelect && newRecipientInput) {
+        recipientSelect.value = '';
+        newRecipientInput.value = '';
+        newRecipientInput.style.display = 'none';
+        newRecipientInput.required = false;
+        recipientSelect.required = true;
+    }
 }
 
 // Utility function to escape HTML

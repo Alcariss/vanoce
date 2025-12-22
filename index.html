@@ -23,7 +23,7 @@
             <h1>🎄 Vánoční Dárky</h1>
             <p class="subtitle">Přehled vánočních dárků pro celou rodinu</p>
             <div class="version-info" id="version-info" onclick="forceUpdate()" title="Klikněte pro aktualizaci aplikace">
-                Verze: <span id="app-version">1.0.0</span>
+                Verze: <span id="app-version">1.3.0</span>
             </div>
         </header>
 
@@ -38,6 +38,7 @@
                 <div class="progress-bar">
                     <div class="progress-segment vyjasnit" id="progress-vyjasnit"></div>
                     <div class="progress-segment objednano" id="progress-objednano"></div>
+                    <div class="progress-segment zabaleno" id="progress-zabaleno"></div>
                     <div class="progress-segment hotovo" id="progress-hotovo"></div>
                 </div>
                 <div class="progress-legend">
@@ -48,6 +49,10 @@
                     <div class="legend-item">
                         <span class="legend-color objednano"></span>
                         <span>Objednáno: <span id="objednano-count">0</span></span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color zabaleno"></span>
+                        <span>Zabaleno: <span id="zabaleno-count">0</span></span>
                     </div>
                     <div class="legend-item">
                         <span class="legend-color hotovo"></span>
@@ -82,7 +87,11 @@
             <form onsubmit="addGift(event)">
                 <div class="form-group">
                     <label for="kdo">Pro koho:</label>
-                    <input type="text" id="kdo" name="kdo" required placeholder="Např. Klári">
+                    <select id="kdo" name="kdo" required>
+                        <option value="">Vyberte příjemce...</option>
+                    </select>
+                    <input type="text" id="kdo-new" placeholder="Nebo napište nového příjemce..." style="margin-top: 8px; display: none;">
+                    <button type="button" id="add-new-recipient" style="margin-top: 8px; padding: 4px 8px; font-size: 12px;">+ Přidat nového příjemce</button>
                 </div>
                 <div class="form-group">
                     <label for="odKoho">Od koho:</label>
@@ -101,6 +110,7 @@
                     <select id="status" name="status" required>
                         <option value="Vyjasnit">Vyjasnit</option>
                         <option value="Objednano">Objednano</option>
+                        <option value="Zabaleno">Zabaleno</option>
                         <option value="Hotovo">Hotovo</option>
                     </select>
                 </div>
