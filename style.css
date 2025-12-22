@@ -431,6 +431,10 @@ body {
     border-left-color: #3182ce;
 }
 
+.gift-card.ordered {
+    border-left-color: #d69e2e;
+}
+
 .gift-card.given {
     border-left-color: #805ad5;
 }

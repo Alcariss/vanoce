@@ -239,7 +239,7 @@ function displayGifts(giftsToShow) {
                             onchange="changeStatus('${escapeHtml(gift.kdo)}', '${escapeHtml(gift.co)}', this.value)">
                         <option value="Vyjasnit" ${gift.status === 'Vyjasnit' ? 'selected' : ''}>Vyjasnit</option>
                         <option value="Objednano" ${gift.status === 'Objednano' ? 'selected' : ''}>Objednano</option>
-                        <option value="Zabaleno" ${gift.status === 'Zabaleno' ? 'selected' : ''}>Zabaleno</option>
+                        <option value="Zabalit" ${gift.status === 'Zabalit' ? 'selected' : ''}>Zabalit</option>
                         <option value="Hotovo" ${gift.status === 'Hotovo' ? 'selected' : ''}>Hotovo</option>
                     </select>
                 </div>
@@ -263,7 +263,7 @@ function getStatusClass(status) {
     switch (status.toLowerCase()) {
         case 'hotovo':
             return 'bought';
-        case 'zabaleno':
+        case 'zabalit':
             return 'wrapped';
         case 'objednano':
             return 'ordered';
@@ -463,7 +463,7 @@ function updateStats(giftsToCount = gifts) {
         g.status && g.status.toLowerCase() === 'objednano'
     ).length;
     const zabalenoCount = giftsToCount.filter(g => 
-        g.status && g.status.toLowerCase() === 'zabaleno'
+        g.status && g.status.toLowerCase() === 'zabalit'
     ).length;
     const hotovoCount = giftsToCount.filter(g => 
         g.status && g.status.toLowerCase() === 'hotovo'
