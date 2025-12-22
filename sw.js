@@ -1,5 +1,5 @@
-const CACHE_NAME = 'vanocni-darky-v1.4.0';
-const APP_VERSION = '1.4.0';
+const CACHE_NAME = 'vanocni-darky-v1.4.2';
+const APP_VERSION = '1.4.2';
 const urlsToCache = [
   './',
   './index.html',
